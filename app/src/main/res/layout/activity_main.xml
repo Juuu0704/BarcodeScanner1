@@ -5,26 +5,34 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!--ligne 15 et 16 : 0dp = s'adapte à l'écran-->
+    <!--ligne 17 et 18 : utilisation de ratio 9:9 (carré) et 90% de la largeur-->
+    <!--ligne 23 : L'attache du cadre par rapport au haut de l'écran-->
+    <!--ligne 34 : Fixe le Résultat du scan au bas de la fenêtre de lecture-->
+
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layout_constraintWidth_percent="0.90"
+        app:layout_constraintDimensionRatio="H,9:9"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.40"/>
 
     <TextView
         android:id="@+id/resultText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/scan_result"
-        android:textSize="18sp"
-        android:background="#AA000000"
-        android:textColor="#FFFFFF"
+        android:background="@color/aa000000"
         android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:text="@string/scan_result"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -7,6 +7,5 @@
 
     <style name="Theme.BarcodeScanner" parent="Base.Theme.BarcodeScanner" />
 
-    <style name="Theme.BarcodeScanner" parent="android:Theme.Material.Light.NoActionBar" />
 
 </resources>

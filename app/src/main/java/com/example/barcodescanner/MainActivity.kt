@@ -1,13 +1,13 @@
 package com.example.barcodescanner
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
-import androidx.camera.core.Preview
+import androidx.camera.core.Preview as CameraPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -15,47 +15,10 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var resultText: TextView
-    private val cameraExecutor = Executors.newSingleThreadExecutor()
-
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        enableEdgeToEdge()
-        setContent {
-            MaterialTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )}
-            }
-        }
-
-        previewView = findViewById(R.id.previewView)
-        resultText = findViewById(R.id.resultText)
-
-
-        requestPermission.launch(Manifest.permission.CAMERA)
-    }
-
 
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -64,54 +27,70 @@ class MainActivity : AppCompatActivity() {
         else resultText.text = "Permission caméra refusée"
     }
 
+    private val cameraExecutor = Executors.newSingleThreadExecutor()
+    private var isScanning = true
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        previewView = findViewById(R.id.previewView)
+        resultText = findViewById(R.id.resultText)
+
+        requestPermission.launch(Manifest.permission.CAMERA)
+    }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
-
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+            val preview = CameraPreview.Builder().build().also {
+                it.surfaceProvider = previewView.surfaceProvider
             }
-
 
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, BarcodeAnalyzer { code ->
-                        runOnUiThread { resultText.text = code }
-                    })
+                    it.setAnalyzer(
+                        cameraExecutor,
+                        BarcodeAnalyzer { code ->
+                            if (isScanning) {
+                                isScanning = false
+
+                                // On met à jour uniquement le TextView — le PreviewView reste intact
+                                runOnUiThread {
+                                    resultText.text = "ISBN : $code"
+
+                                    // Réactive le scan après 2 secondes
+                                    resultText.postDelayed({ isScanning = true }, 2000)
+                                }
+                            }
+                        }
+                    )
                 }
 
-
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                this, cameraSelector, preview, imageAnalyzer
-            )
-
-
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalyzer)
+            } catch (e: Exception) {
+                Log.e("CameraX", "Erreur : ${e.message}")
+            }
         }, ContextCompat.getMainExecutor(this))
     }
-
 }
 
-
+/**
+ * Classe responsable de l'analyse des images de la caméra en temps réel.
+ */
 class BarcodeAnalyzer(private val onBarcodeDetected: (String) -> Unit) : ImageAnalysis.Analyzer {
-
-
     private val scanner = BarcodeScanning.getClient()
-
 
     override fun analyze(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
-
 
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(
@@ -119,34 +98,15 @@ class BarcodeAnalyzer(private val onBarcodeDetected: (String) -> Unit) : ImageAn
                 imageProxy.imageInfo.rotationDegrees
             )
 
-
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
                     for (barcode in barcodes) {
                         barcode.rawValue?.let { onBarcodeDetected(it) }
                     }
                 }
-                .addOnCompleteListener { imageProxy.close() }
+                .addOnCompleteListener {
+                    imageProxy.close()
+                }
         }
     }
 }
-
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "ISBN : $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MaterialTheme {
-        Greeting("Android")
-    }
-}
-
-
-
