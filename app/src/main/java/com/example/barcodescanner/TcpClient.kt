@@ -1,6 +1,11 @@
 package com.example.barcodescanner
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -21,6 +26,7 @@ class TcpClient(
             socket = Socket(serverIp, serverPort)
             writer = PrintWriter(socket!!.getOutputStream(), true)
             reader = BufferedReader(InputStreamReader(socket!!.getInputStream()))
+            println("Connecté à $serverIp:$serverPort")
             true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -36,9 +42,46 @@ class TcpClient(
         return@withContext reader?.readLine()
     }
 
+    // Écoute continue en arrière-plan
+    fun startListening(scope: CoroutineScope, onMessage: (String) -> Unit) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                while (isActive) {
+                    val message = reader?.readLine() ?: break
+                    withContext(Dispatchers.Main) {
+                        onMessage(message)
+                    }
+                }
+            } catch (e: Exception) {
+                println("Connexion fermée : ${e.message}")
+            }
+        }
+    }
+
     suspend fun disconnect() = withContext(Dispatchers.IO) {
         reader?.close()
         writer?.close()
         socket?.close()
+        println("Déconnecté")
     }
 }
+
+/*
+fun main() = runBlocking{
+    val client = TcpClient("198.168.2.51",12345)
+
+    try{
+        client.connect()
+
+        client.startListening(this){message ->
+            println("Message reçu : $message")
+        }
+
+        repeat(3) { i ->
+            client.sendMessage("Message $i")
+            delay(1000)
+        }
+    } finally {
+        client.disconnect()
+    }
+}*/

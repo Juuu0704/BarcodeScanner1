@@ -13,12 +13,17 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var resultText: TextView
+
+    private lateinit var tcpClient: TcpClient
 
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -30,6 +35,8 @@ class MainActivity : AppCompatActivity() {
     private val cameraExecutor = Executors.newSingleThreadExecutor()
     private var isScanning = true
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -37,7 +44,14 @@ class MainActivity : AppCompatActivity() {
         previewView = findViewById(R.id.previewView)
         resultText = findViewById(R.id.resultText)
 
+        // Connexion TCP au démarrage
+        tcpClient = TcpClient("192.168.2.51", 12345)
+        CoroutineScope(Dispatchers.IO).launch {
+            tcpClient.connect()
+        }
+
         requestPermission.launch(Manifest.permission.CAMERA)
+
     }
 
     private fun startCamera() {
@@ -60,13 +74,26 @@ class MainActivity : AppCompatActivity() {
                             if (isScanning) {
                                 isScanning = false
 
+                                // ✅ Envoi TCP du code scanné
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    tcpClient.sendMessage(code)
+                                    val reponse = tcpClient.receiveMessage()
+
+                                    withContext(Dispatchers.Main) {
+                                        resultText.text = "ISBN : $code "
+                                        resultText.postDelayed({ isScanning = true }, 2000)
+                                    }
+                                }
+
+                                /*
                                 // On met à jour uniquement le TextView — le PreviewView reste intact
                                 runOnUiThread {
                                     resultText.text = "ISBN : $code"
 
                                     // Réactive le scan après 2 secondes
                                     resultText.postDelayed({ isScanning = true }, 2000)
-                                }
+                                }*/
+
                             }
                         }
                     )
@@ -81,6 +108,12 @@ class MainActivity : AppCompatActivity() {
             }
         }, ContextCompat.getMainExecutor(this))
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        CoroutineScope(Dispatchers.IO).launch{
+            tcpClient.disconnect()}
+    }
 }
 
 /**
@@ -88,6 +121,7 @@ class MainActivity : AppCompatActivity() {
  */
 class BarcodeAnalyzer(private val onBarcodeDetected: (String) -> Unit) : ImageAnalysis.Analyzer {
     private val scanner = BarcodeScanning.getClient()
+
 
     override fun analyze(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
