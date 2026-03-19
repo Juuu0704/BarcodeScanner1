@@ -3,6 +3,8 @@ package com.example.barcodescanner
 import android.Manifest
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -22,7 +24,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var resultText: TextView
-
+    private lateinit var adresseIP: TextView
+    private lateinit var bouton: Button
+    private lateinit var new_ip: EditText
     private lateinit var tcpClient: TcpClient
 
     private val requestPermission = registerForActivityResult(
@@ -34,8 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     private val cameraExecutor = Executors.newSingleThreadExecutor()
     private var isScanning = true
-
-
+    val IP = "192.168.2.51"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,15 +46,17 @@ class MainActivity : AppCompatActivity() {
 
         previewView = findViewById(R.id.previewView)
         resultText = findViewById(R.id.resultText)
+        adresseIP = findViewById(R.id.Text)
+        bouton = findViewById(R.id.button)
+        new_ip = findViewById(R.id.ipEdit)
 
         // Connexion TCP au démarrage
-        tcpClient = TcpClient("192.168.2.51", 12345)
+        tcpClient = TcpClient(IP, 12345)
         CoroutineScope(Dispatchers.IO).launch {
             tcpClient.connect()
         }
 
         requestPermission.launch(Manifest.permission.CAMERA)
-
     }
 
     private fun startCamera() {
@@ -64,6 +69,18 @@ class MainActivity : AppCompatActivity() {
                 it.surfaceProvider = previewView.surfaceProvider
             }
 
+            // affiche le résultat dans la fenetre de scan
+            CoroutineScope(Dispatchers.Main).launch{
+                withContext(Dispatchers.Main) {
+                    adresseIP.text = "Dernière IP sauvegardée : $IP "
+                }
+            }
+
+            findViewById<Button>(R.id.button)
+                .setOnClickListener {
+                    Log.d("BUTTONS", "User tapped the button")
+                }
+
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
@@ -74,15 +91,18 @@ class MainActivity : AppCompatActivity() {
                             if (isScanning) {
                                 isScanning = false
 
+                                // affiche le résultat dans la fenetre de scan
+                                CoroutineScope(Dispatchers.Main).launch{
+                                    withContext(Dispatchers.Main) {
+                                        resultText.text = "Résultat : $code "
+                                        resultText.postDelayed({ isScanning = true }, 2000)
+                                    }
+                                }
+
                                 // ✅ Envoi TCP du code scanné
                                 CoroutineScope(Dispatchers.IO).launch {
                                     tcpClient.sendMessage(code)
                                     val reponse = tcpClient.receiveMessage()
-
-                                    withContext(Dispatchers.Main) {
-                                        resultText.text = "ISBN : $code "
-                                        resultText.postDelayed({ isScanning = true }, 2000)
-                                    }
                                 }
 
                                 /*
