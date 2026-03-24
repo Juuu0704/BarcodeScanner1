@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -29,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var new_ip: EditText
     private lateinit var tcpClient: TcpClient
 
+    private lateinit var bouton_envoi: Button
+
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -49,9 +52,10 @@ class MainActivity : AppCompatActivity() {
         adresseIP = findViewById(R.id.Text)
         bouton = findViewById(R.id.button)
         new_ip = findViewById(R.id.ipEdit)
+        bouton_envoi = findViewById(R.id.sendbutton)
 
         // Connexion TCP au démarrage
-        tcpClient = TcpClient(IP, 12345)
+        tcpClient = TcpClient(IP, 1234)
         CoroutineScope(Dispatchers.IO).launch {
             tcpClient.connect()
         }
@@ -75,11 +79,21 @@ class MainActivity : AppCompatActivity() {
                     adresseIP.text = "Dernière IP sauvegardée : $IP "
                 }
             }
+/*_______________________________________________________BOUTON IP_____________________________________________________________________*/
+            val button = findViewById<Button>(R.id.button)
+            //val newIp = findViewById<EditText>(R.id.new_IP)
 
-            findViewById<Button>(R.id.button)
-                .setOnClickListener {
-                    Log.d("BUTTONS", "User tapped the button")
+            button.setOnClickListener {
+                val IP = new_ip.text.toString()
+                adresseIP.text = "Nouvelle IP : $IP "
+                Toast.makeText(this, "IP changée !", Toast.LENGTH_SHORT).show()
+                // Connexion TCP au démarrage
+                tcpClient = TcpClient(IP, 12345)
+                CoroutineScope(Dispatchers.IO).launch {
+                    tcpClient.connect()
                 }
+            }
+ /*_______________________________________________________FIN BOUTON IP_____________________________________________________________________*/
 
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -99,21 +113,23 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
 
-                                // ✅ Envoi TCP du code scanné
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    tcpClient.sendMessage(code)
-                                    val reponse = tcpClient.receiveMessage()
+                                val bouton = findViewById<Button>(R.id.sendbutton)
+                                bouton.setOnClickListener {
+                                    // ✅ Envoi TCP du code scanné
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        tcpClient.sendMessage(code)
+                                        // Toast confirmation envoi
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(this@MainActivity, "Code envoyé : $code", Toast.LENGTH_SHORT).show()
+                                        }
+
+                                        val reponse = tcpClient.receiveMessage()
+                                        // Toast avec la réponse
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(this@MainActivity, "Réponse : $reponse", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
                                 }
-
-                                /*
-                                // On met à jour uniquement le TextView — le PreviewView reste intact
-                                runOnUiThread {
-                                    resultText.text = "ISBN : $code"
-
-                                    // Réactive le scan après 2 secondes
-                                    resultText.postDelayed({ isScanning = true }, 2000)
-                                }*/
-
                             }
                         }
                     )
@@ -129,6 +145,7 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+/*_______________________________________________________DESTRUCTION DE LA CONNEXION_____________________________________________________________________*/
     override fun onDestroy() {
         super.onDestroy()
         CoroutineScope(Dispatchers.IO).launch{
