@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
                 adresseIP.text = "Nouvelle IP : $IP "
                 Toast.makeText(this, "IP changée !", Toast.LENGTH_SHORT).show()
                 // Connexion TCP au démarrage
-                tcpClient = TcpClient(IP, 12345)
+                tcpClient = TcpClient(IP, 1234)
                 CoroutineScope(Dispatchers.IO).launch {
                     tcpClient.connect()
                 }
