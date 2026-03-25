@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                                         resultText.postDelayed({ isScanning = true }, 2000)
                                     }
                                 }
-
+   /*_______________________________________________________ENVOI_____________________________________________________________________*/
                                 val bouton = findViewById<Button>(R.id.sendbutton)
                                 bouton.setOnClickListener {
                                     // ✅ Envoi TCP du code scanné
@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                                         withContext(Dispatchers.Main) {
                                             Toast.makeText(this@MainActivity, "Code envoyé : $code", Toast.LENGTH_SHORT).show()
                                         }
-
+/*_______________________________________________________REPONSE_____________________________________________________________________*/
                                         val reponse = tcpClient.receiveMessage()
                                         // Toast avec la réponse
                                         withContext(Dispatchers.Main) {

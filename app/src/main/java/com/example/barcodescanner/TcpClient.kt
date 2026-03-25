@@ -48,7 +48,15 @@ class TcpClient(private val serverIp: String, private val serverPort: Int) {
         writer?.println(message)
     }
     suspend fun receiveMessage(): String? = withContext(Dispatchers.IO) {
-        return@withContext reader?.readLine()
+        socket?.let { s ->
+            val input = s.getInputStream()
+            val buffer = ByteArray(1024)
+            val bytesRead = input.read(buffer)
+            val response = String(buffer, 0, bytesRead)
+            println("Réponse : $response")
+            return@withContext response
+        }
+        return@withContext null
     }
 
     // Écoute continue en arrière-plan
