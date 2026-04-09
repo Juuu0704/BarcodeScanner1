@@ -38,10 +38,26 @@ class MainActivity : AppCompatActivity() {
         if (granted) startCamera()
         else resultText.text = "Permission caméra refusée"
     }
+    private fun loadIP(): String {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        return prefs.getString("saved_ip", "192.168.2.50") ?: "192.168.2.50"
+    }
+    private fun saveIP(ip: String) {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        prefs.edit().putString("saved_ip", ip).apply()
+    }
 
     private val cameraExecutor = Executors.newSingleThreadExecutor()
     private var isScanning = true
-    val IP = "192.168.2.51"
+
+    private fun isValidIP(ip: String): Boolean {
+        return try {
+            java.net.InetAddress.getByName(ip)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,8 +70,13 @@ class MainActivity : AppCompatActivity() {
         new_ip = findViewById(R.id.ipEdit)
         bouton_envoi = findViewById(R.id.sendbutton)
 
+        val savedIP = loadIP()
+        tcpClient = TcpClient(savedIP, 1234)
+
+        adresseIP.text = "Dernière IP sauvegardée : $savedIP"
+
         // Connexion TCP au démarrage
-        tcpClient = TcpClient(IP, 1234)
+        tcpClient = TcpClient(savedIP, 1234)
         CoroutineScope(Dispatchers.IO).launch {
             tcpClient.connect()
         }
@@ -73,10 +94,9 @@ class MainActivity : AppCompatActivity() {
                 it.surfaceProvider = previewView.surfaceProvider
             }
 
-            // affiche le résultat dans la fenetre de scan
             CoroutineScope(Dispatchers.Main).launch{
                 withContext(Dispatchers.Main) {
-                    adresseIP.text = "Dernière IP sauvegardée : $IP "
+                    adresseIP.text = "Dernière IP sauvegardée : ${loadIP()}"
                 }
             }
 /*_______________________________________________________BOUTON IP_____________________________________________________________________*/
@@ -84,11 +104,26 @@ class MainActivity : AppCompatActivity() {
             //val newIp = findViewById<EditText>(R.id.new_IP)
 
             button.setOnClickListener {
-                val IP = new_ip.text.toString()
-                adresseIP.text = "Nouvelle IP : $IP "
+                val new_IP = new_ip.text.toString()
+
+                // ✅ Vérification IP
+                if (new_IP.isBlank()) {
+                    Toast.makeText(this, "Veuillez entrer une IP", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                if (!isValidIP(new_IP)) {
+                    Toast.makeText(this, "IP invalide", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                saveIP(new_IP)          //sauvegarde
+
+                adresseIP.text = "Nouvelle IP : $new_IP "
                 Toast.makeText(this, "IP changée !", Toast.LENGTH_SHORT).show()
-                // Connexion TCP au démarrage
-                tcpClient = TcpClient(IP, 1234)
+
+                // Reconnexion propre
+                tcpClient = TcpClient(new_IP, 1234)
                 CoroutineScope(Dispatchers.IO).launch {
                     tcpClient.connect()
                 }
@@ -104,11 +139,12 @@ class MainActivity : AppCompatActivity() {
                         BarcodeAnalyzer { code ->
                             if (isScanning) {
                                 isScanning = false
-
+                            val code_coupe = code.substringBefore(";")
                                 // affiche le résultat dans la fenetre de scan
                                 CoroutineScope(Dispatchers.Main).launch{
                                     withContext(Dispatchers.Main) {
-                                        resultText.text = "Résultat : $code "
+
+                                        resultText.text = "Résultat : ${code_coupe} "
                                         resultText.postDelayed({ isScanning = true }, 2000)
                                     }
                                 }
@@ -120,7 +156,7 @@ class MainActivity : AppCompatActivity() {
                                         tcpClient.sendMessage(code)
                                         // Toast confirmation envoi
                                         withContext(Dispatchers.Main) {
-                                            Toast.makeText(this@MainActivity, "Code envoyé : $code", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(this@MainActivity, "Code envoyé : $code_coupe", Toast.LENGTH_SHORT).show()
                                         }
 /*_______________________________________________________REPONSE_____________________________________________________________________*/
                                         val reponse = tcpClient.receiveMessage()
