@@ -30,7 +30,8 @@ class TcpClient(private val serverIp: String, private val serverPort: Int) {
         }
     }
     suspend fun sendMessage(message: String) = withContext(Dispatchers.IO) {
-        writer?.println(message)
+        writer?.print(message)
+        writer?.flush()
     }
     suspend fun receiveMessage(): String? = withContext(Dispatchers.IO) {
         socket?.let { s ->

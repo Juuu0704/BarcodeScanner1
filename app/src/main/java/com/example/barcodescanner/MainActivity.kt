@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var resultText: TextView
     private lateinit var adresseIP: TextView
-    private lateinit var bouton: Button
+    private lateinit var bouton_ip: Button
     private lateinit var new_ip: EditText
     private lateinit var tcpClient: TcpClient
 
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
     }
     private fun loadIP(): String {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        return prefs.getString("saved_ip", "192.168.2.50") ?: "192.168.2.50"
+        return prefs.getString("saved_ip", "192.168.2.70") ?: "192.168.2.70"
     }
     private fun saveIP(ip: String) {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
@@ -66,17 +66,17 @@ class MainActivity : AppCompatActivity() {
         previewView = findViewById(R.id.previewView)
         resultText = findViewById(R.id.resultText)
         adresseIP = findViewById(R.id.Text)
-        bouton = findViewById(R.id.button)
+        bouton_ip = findViewById(R.id.ipbutton)
         new_ip = findViewById(R.id.ipEdit)
         bouton_envoi = findViewById(R.id.sendbutton)
 
         val savedIP = loadIP()
-        tcpClient = TcpClient(savedIP, 1234)
+        tcpClient = TcpClient(savedIP, 12345)
 
         adresseIP.text = "Dernière IP sauvegardée : $savedIP"
 
         // Connexion TCP au démarrage
-        tcpClient = TcpClient(savedIP, 1234)
+        tcpClient = TcpClient(savedIP, 12345)
         CoroutineScope(Dispatchers.IO).launch {
             tcpClient.connect()
         }
@@ -100,13 +100,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 /*_______________________________________________________BOUTON IP_____________________________________________________________________*/
-            val button = findViewById<Button>(R.id.button)
+            val bouton_ip = findViewById<Button>(R.id.ipbutton)
             //val newIp = findViewById<EditText>(R.id.new_IP)
 
-            button.setOnClickListener {
+            bouton_ip.setOnClickListener {
                 val new_IP = new_ip.text.toString()
 
-                // ✅ Vérification IP
+                // Vérification IP
                 if (new_IP.isBlank()) {
                     Toast.makeText(this, "Veuillez entrer une IP", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "IP changée !", Toast.LENGTH_SHORT).show()
 
                 // Reconnexion propre
-                tcpClient = TcpClient(new_IP, 1234)
+                tcpClient = TcpClient(new_IP, 12345)
                 CoroutineScope(Dispatchers.IO).launch {
                     tcpClient.connect()
                 }
@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
                         BarcodeAnalyzer { code ->
                             if (isScanning) {
                                 isScanning = false
-                            val code_coupe = code.substringBefore(";")
+                                val code_coupe = code.substringBefore(";")
                                 // affiche le résultat dans la fenetre de scan
                                 CoroutineScope(Dispatchers.Main).launch{
                                     withContext(Dispatchers.Main) {
@@ -148,10 +148,10 @@ class MainActivity : AppCompatActivity() {
                                         resultText.postDelayed({ isScanning = true }, 2000)
                                     }
                                 }
-   /*_______________________________________________________ENVOI_____________________________________________________________________*/
+/*_______________________________________________________ENVOI_____________________________________________________________________*/
                                 val bouton = findViewById<Button>(R.id.sendbutton)
                                 bouton.setOnClickListener {
-                                    // ✅ Envoi TCP du code scanné
+                                    // Envoi TCP du code scanné
                                     CoroutineScope(Dispatchers.IO).launch {
                                         tcpClient.sendMessage(code)
                                         // Toast confirmation envoi
