@@ -4,92 +4,44 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:foregroundTint="#673AB7">
+    tools:context=".MainActivity"
+    android:background="@color/accueil">
 
-    <!--ligne 15 et 16 : 0dp = s'adapte à l'écran-->
-    <!--ligne 17 et 18 : utilisation de ratio 9:9 (carré) et 90% de la largeur-->
-    <!--ligne 23 : L'attache du cadre par rapport au haut de l'écran-->
-    <!--ligne 34 : Fixe le Résultat du scan au bas de la fenêtre de lecture-->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
+
+    <Button
+        android:id="@+id/fragment_btn_ip"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="H,9:9"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.50"
-        app:layout_constraintWidth_percent="0.90" >
-
-    </androidx.camera.view.PreviewView>
-
-    <TextView
-        android:id="@+id/resultText"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/aa000000"
-        android:padding="8dp"
-        android:text="@string/scan_result"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="@id/previewView"
+        android:layout_marginBottom="55dp"
+        android:backgroundTint="@color/black"
+        android:text="Paramètres"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="@+id/fragment_container"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/Text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="64dp"
-        android:padding="8dp"
-        android:text="Résultat d'IP"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@+id/ipbutton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <EditText
-        android:id="@+id/ipEdit"
-        android:layout_width="187dp"
-        android:layout_height="41dp"
-        android:layout_marginBottom="12dp"
-        android:hint="Entrer une adresse IP"
-        app:layout_constraintBottom_toTopOf="@+id/ipbutton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.89"
         app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="Autofill,TextFields" />
+        app:layout_constraintWidth_percent="0.4" />
 
     <Button
-        android:id="@+id/ipbutton"
-        android:layout_width="wrap_content"
+        android:id="@+id/fragment_btn_accueil"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:backgroundTint="#673AB7"
-        android:text="Changer l'adresse IP"
+        android:layout_marginBottom="55dp"
+        android:backgroundTint="@color/black"
+        android:text="Accueil"
         android:textColor="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/previewView"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="@+id/fragment_container"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.113"
         app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="HardcodedText" />
-
-    <Button
-        android:id="@+id/sendbutton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#673AB7"
-        android:text="Envoyer le résultat"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/previewView"
-        app:layout_constraintVertical_bias="0.5"
-        tools:ignore="HardcodedText" />
+        app:layout_constraintWidth_percent="0.4" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

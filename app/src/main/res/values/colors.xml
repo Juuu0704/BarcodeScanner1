@@ -8,4 +8,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="aa000000">#AA656565</color>
+    <color name="accueil">#CCE5FF</color>
+    <color name="parametrage_ip">#94D5F5</color>
 </resources>
